@@ -113,7 +113,7 @@
     }
 
     .page-container {
-      width: min(1200px, 100%);
+      width: min(1500px, 100%);
       margin: 0 auto;
       padding: 24px;
     }
@@ -135,7 +135,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
       gap: var(--space-5);
       align-items: start;
       margin-top: var(--space-5);
@@ -345,6 +345,22 @@
       color: white;
     }
 
+    .manual-link-card {
+      padding: 14px 16px;
+      background: var(--floral-white-warm);
+      border: 2px solid var(--sky-blue-light);
+      border-radius: var(--radius-medium);
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .manual-link-card a {
+      color: var(--deep-space-blue);
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -450,9 +466,10 @@
 
     table {
       width: 100%;
-      min-width: 720px;
+      min-width: 0;
       border-collapse: collapse;
       background: white;
+      table-layout: fixed;
     }
 
     th,
@@ -462,6 +479,8 @@
       text-align: left;
       vertical-align: top;
       font-size: 13px;
+      overflow-wrap: anywhere;
+      word-break: normal;
     }
 
     th {
@@ -474,6 +493,7 @@
       font-weight: 700;
       letter-spacing: 0.05em;
       text-transform: uppercase;
+      white-space: normal;
     }
 
     tr:nth-child(even) td {
@@ -589,13 +609,13 @@
     <img class="brand-logo" src="/images/logo_white_transparent.png" alt="Altagether" />
     <div>
       <h1>Data enrichment tool</h1>
-      <p>Add parcel APNs, latitude, and longitude to pasted addresses or a CSV.</p>
+      <p>Look up APN numbers and coordinates for a list of addresses.</p>
     </div>
   </header>
 
   <main class="page-container">
     <section class="callout">
-      <strong>Use the shortest path that matches the list you have.</strong> Paste one address per line, paste a CSV, or upload a CSV. Then choose whether to look up APNs, coordinates, or both.
+      Enter addresses below, choose what to look up, and this page will add APN numbers and latitude/longitude to your list.
     </section>
 
     <div class="layout">
@@ -603,7 +623,7 @@
         <div class="card stack">
           <div>
             <h2>1. Add addresses</h2>
-            <p class="subtle">Paste plain addresses or CSV data. Uploaded CSV files keep their original columns.</p>
+            <p class="subtle">Paste one address per line, or paste or upload a CSV that has an address column.</p>
           </div>
 
           <div class="field">
@@ -614,7 +634,7 @@
 
           <div class="field">
             <label for="rawInput">Paste addresses or CSV</label>
-            <textarea id="rawInput" placeholder="123 Main St, Altadena, CA 91001&#10;456 Lake Ave&#10;&#10;Or paste CSV with an Address column"></textarea>
+            <textarea id="rawInput" placeholder="123 Main St, Altadena, CA 91001&#10;456 Lake Ave&#10;789 Marengo Ave"></textarea>
           </div>
 
           <div class="button-row">
@@ -638,6 +658,12 @@
               <input id="lookupCoords" type="checkbox" checked />
               <span>Latitude and longitude<small>Fill coordinate columns from the first geocoder match.</small></span>
             </label>
+          </div>
+
+          <div class="manual-link-card">
+            Automated APN lookup may miss some addresses. If a row needs manual review, use the
+            <a href="https://portal.assessor.lacounty.gov/" target="_blank" rel="noopener noreferrer">LA County Assessor Portal</a>
+            to search the parcel directly.
           </div>
 
           <div class="compact-grid">
@@ -1424,8 +1450,8 @@
     }
 
     function normalizeZipPrefix5(value) {
-      const digits = String(value || '').replace(/\D/g, '');
-      return digits.length >= 5 ? digits.slice(0, 5) : '';
+      const match = String(value || '').match(/\b(\d{5})(?:-\d{4})?\b/);
+      return match ? match[1] : '';
     }
 
     function normalizeApn(value) {
