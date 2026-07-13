@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APN Lookup</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --surface: #fffdf8;
+      --ink: #1f1f1c;
+      --muted: #66635c;
+      --line: #ddd6c8;
+      --accent: #2e5d4f;
+      --warn: #9a6700;
+      --warn-bg: #fff7d6;
+      --danger: #9d2d2d;
+      --danger-bg: #fdeaea;
+      --ok: #235f3a;
+      --ok-bg: #eaf7ee;
+      --shadow: 0 10px 30px rgba(0,0,0,.06);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 { margin: 0; }
+
+    .hero {
+      background: linear-gradient(180deg, #fffdf8, #faf6ed);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-inner {
+      padding: 18px;
+    }
+
+    .stack { display: grid; gap: 14px; }
+    .stack-lg { display: grid; gap: 20px; }
+
+    .label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"], button, textarea {
+      width: 100%;
+      font: inherit;
+    }
+
+    input[type="text"], textarea {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: white;
+      color: var(--ink);
+    }
+
+    textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s ease;
+    }
+
+    button:hover { filter: brightness(.95); }
+    button.secondary {
+      background: white;
+      color: var(--accent);
+    }
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .callout {
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .callout.warn {
+      border-color: #f0d89d;
+      background: var(--warn-bg);
+      color: #5b4300;
+    }
+
+    .callout.danger {
+      border-color: #efc0c0;
+      background: var(--danger-bg);
+      color: #6f2020;
+    }
+
+    .callout.ok {
+      border-color: #c9e5d1;
+      background: var(--ok-bg);
+      color: #184628;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    th, td {
+      font-size: 13px;
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee6d8;
+      vertical-align: top;
+    }
+
+    th {
+      background: #faf6ed;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .scroll {
+      overflow: auto;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: white;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .simple-lookup-grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 420px) 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .simple-lookup-input {
+      min-height: 260px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-row button {
+      width: auto;
+      flex: 1 1 auto;
+      min-width: 140px;
+    }
+
+    @media (max-width: 900px) {
+      .simple-lookup-grid { grid-template-columns: 1fr; }
+      .wrap { padding: 14px; }
+      .hero { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="hero">
+      <h1>APN Lookup</h1>
+      <p>
+        Paste addresses and query LA County parcels directly. An APN is filled only when the address
+        returns exactly one distinct parcel number.
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-inner stack-lg">
+        <div class="callout">
+          Paste one address per line, or paste a CSV with an address column. The lookup defaults to
+          Altadena, CA 91001 unless a row includes its own ZIP.
+        </div>
+
+        <div class="simple-lookup-grid">
+          <div class="stack">
+            <div>
+              <label class="label" for="simpleDefaultZip">Default ZIP for pasted addresses</label>
+              <input id="simpleDefaultZip" type="text" value="91001" inputmode="numeric" />
+              <p class="small" style="margin:6px 0 0;">Leave as <span class="mono">91001</span> for Altadena, or include the ZIP in each address line.</p>
+            </div>
+            <div>
+              <label class="label" for="simpleLookupInput">Addresses</label>
+              <textarea id="simpleLookupInput" class="simple-lookup-input" placeholder="123 Main St, Los Angeles, CA 90012
+456 Alameda St
+789 Sunset Blvd, Los Angeles CA"></textarea>
+              <p class="small" style="margin:6px 0 0;">ZIP codes are optional. Rows without one use the default ZIP above.</p>
+            </div>
+            <button id="runSimpleLookup">Look up APNs</button>
+            <div class="btn-row">
+              <button id="copySimpleLookup" class="secondary" disabled>Copy results</button>
+              <button id="downloadSimpleLookup" class="secondary" disabled>Download CSV</button>
+              <button id="clearSimpleLookup" class="secondary">Clear</button>
+            </div>
+            <div id="simpleLookupMessage" class="callout">Paste addresses above, then run the lookup.</div>
+          </div>
+          <div class="stack">
+            <div class="small">Results appear when the run completes. Ambiguous rows keep candidate APNs for manual review.</div>
+            <div class="scroll"><table id="simpleLookupTable"></table></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const state = { simpleLookupRows: [] };
+
+    const els = {
+      simpleDefaultZip: document.getElementById('simpleDefaultZip'),
+      simpleLookupInput: document.getElementById('simpleLookupInput'),
+      runSimpleLookup: document.getElementById('runSimpleLookup'),
+      clearSimpleLookup: document.getElementById('clearSimpleLookup'),
+      copySimpleLookup: document.getElementById('copySimpleLookup'),
+      downloadSimpleLookup: document.getElementById('downloadSimpleLookup'),
+      simpleLookupMessage: document.getElementById('simpleLookupMessage'),
+      simpleLookupTable: document.getElementById('simpleLookupTable')
+    };
+
+    const SIMPLE_LOOKUP_COLUMNS = [
+      'row', 'input_address', 'query_address', 'apn', 'zip_filter',
+      'status', 'candidate_apns', 'parcel_features', 'note'
+    ];
+
+    els.runSimpleLookup.addEventListener('click', () => { void runSimpleLookup(); });
+    els.clearSimpleLookup.addEventListener('click', clearSimpleLookup);
+    els.copySimpleLookup.addEventListener('click', () => { void copySimpleLookupToClipboard(); });
+    els.downloadSimpleLookup.addEventListener('click', downloadSimpleLookupCsv);
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let i = 0;
+      let inQuotes = false;
+
+      while (i < text.length) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (inQuotes) {
+          if (char === '"' && next === '"') {
+            cell += '"';
+            i += 2;
+            continue;
+          }
+          if (char === '"') {
+            inQuotes = false;
+            i += 1;
+            continue;
+          }
+          cell += char;
+          i += 1;
+          continue;
+        }
+
+        if (char === '"') {
+          inQuotes = true;
+          i += 1;
+          continue;
+        }
+
+        if (char === ',') {
+          row.push(cell);
+          cell = '';
+          i += 1;
+          continue;
+        }
+
+        if (char === '\n') {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = '';
+          i += 1;
+          continue;
+        }
+
+        if (char === '\r') {
+          i += 1;
+          continue;
+        }
+
+        cell += char;
+        i += 1;
+      }
+
+      row.push(cell);
+      rows.push(row);
+      return rows.filter(r => !(r.length === 1 && r[0] === ''));
+    }
+
+    function toCsv(rows) {
+      if (!rows || !rows.length) return '';
+      const headers = SIMPLE_LOOKUP_COLUMNS;
+      const lines = [headers.map(csvEscape).join(',')];
+      rows.forEach(row => {
+        lines.push(headers.map(h => csvEscape(row[h] ?? '')).join(','));
+      });
+      return lines.join('\n');
+    }
+
+    function toTsv(rows) {
+      if (!rows || !rows.length) return '';
+      const headers = SIMPLE_LOOKUP_COLUMNS;
+      const lines = [headers.map(tsvEscape).join('\t')];
+      rows.forEach(row => {
+        lines.push(headers.map(h => tsvEscape(row[h] ?? '')).join('\t'));
+      });
+      return lines.join('\n');
+    }
+
+    function csvEscape(value) {
+      const s = String(value ?? '');
+      if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+
+    function tsvEscape(value) {
+      return String(value ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
+    }
+
+    function findHeaderIndex(headers, candidates) {
+      const normalized = headers.map((h, idx) => ({ idx, n: normalizeHeader(h) }));
+      for (const candidate of candidates) {
+        const cn = normalizeHeader(candidate);
+        const exact = normalized.find(h => h.n === cn);
+        if (exact) return exact.idx;
+        const partial = normalized.find(h => h.n.includes(cn));
+        if (partial) return partial.idx;
+      }
+      return -1;
+    }
+
+    function normalizeHeader(s) {
+      return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function normalizeAddress(value) {
+      return String(value || '')
+        .toUpperCase()
+        .replace(/\./g, '')
+        .replace(/,/g, ' ')
+        .replace(/\bNORTH\b/g, 'N')
+        .replace(/\bSOUTH\b/g, 'S')
+        .replace(/\bEAST\b/g, 'E')
+        .replace(/\bWEST\b/g, 'W')
+        .replace(/\bSTREET\b/g, 'ST')
+        .replace(/\bAVENUE\b/g, 'AVE')
+        .replace(/\bBOULEVARD\b/g, 'BLVD')
+        .replace(/\bDRIVE\b/g, 'DR')
+        .replace(/\bROAD\b/g, 'RD')
+        .replace(/\bWY\b/g, 'WAY')
+        .replace(/\bCIRCLE\b/g, 'CIR')
+        .replace(/\bPLACE\b/g, 'PL')
+        .replace(/\bCOURT\b/g, 'CT')
+        .replace(/\bLANE\b/g, 'LN')
+        .replace(/\bTERRACE\b/g, 'TER')
+        .replace(/\bHIGHWAY\b/g, 'HWY')
+        .replace(/\bMOUNT\b/g, 'MT')
+        .replace(/#\s*/g, ' UNIT ')
+        .replace(/\bAPT\b/g, 'UNIT')
+        .replace(/\bAPARTMENT\b/g, 'UNIT')
+        .replace(/\bSTE\b/g, 'UNIT')
+        .replace(/\bSUITE\b/g, 'UNIT')
+        .replace(/\bUNIT\b/g, 'UNIT')
+        .replace(/\b1\/2\b/g, 'HALF')
+        .replace(/[^A-Z0-9 ]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function normalizeApn(value) {
+      return String(value || '').replace(/[^0-9]/g, '').trim();
+    }
+
+    function formatApn(value) {
+      const digits = normalizeApn(value);
+      if (digits.length !== 10) return digits;
+      return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+
+    const LA_COUNTY_PARCEL_QUERY =
+      'https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/LA_County_Parcels/FeatureServer/0/query';
+
+    function escapeSqlLiteral(value) {
+      return String(value ?? '').replace(/'/g, "''");
+    }
+
+    function parseHouseAndStreet(normalizedAddress) {
+      const m = String(normalizedAddress || '').match(/^(\d+[A-Z]?)\s+(.+)$/);
+      if (!m) return { house: '', street: '' };
+      return { house: m[1], street: m[2].trim() };
+    }
+
+    function normalizeZipPrefix5(value) {
+      const d = String(value || '').replace(/\D/g, '');
+      if (d.length >= 5) return d.slice(0, 5);
+      return '';
+    }
+
+    function buildLaCountyWhereClause(normalizedAddress, zipPrefix5) {
+      const { house, street } = parseHouseAndStreet(normalizedAddress);
+      let core;
+      if (house && street) {
+        const h = escapeSqlLiteral(house);
+        const s = escapeSqlLiteral(street);
+        core = `SitusHouseNo = '${h}' AND UPPER(SitusStreet) LIKE UPPER('${s}%')`;
+      } else {
+        const full = escapeSqlLiteral(normalizedAddress);
+        core = `UPPER(SitusAddress) LIKE UPPER('%${full}%')`;
+      }
+      if (zipPrefix5) {
+        const z = escapeSqlLiteral(zipPrefix5);
+        return `(${core}) AND SitusZIP LIKE '${z}%'`;
+      }
+      return core;
+    }
+
+    function pickApnDigitsFromAttributes(attrs) {
+      if (!attrs) return '';
+      const ain = normalizeApn(attrs.AIN);
+      if (ain) return ain;
+      return normalizeApn(attrs.APN) || '';
+    }
+
+    async function queryLaCountyParcelFeatures(normalizedAddress, zipPrefix5) {
+      const where = buildLaCountyWhereClause(normalizedAddress, zipPrefix5 || '');
+      const params = new URLSearchParams({
+        f: 'json',
+        where,
+        outFields: 'APN,AIN,SitusAddress,SitusStreet,SitusHouseNo,SitusCity,SitusZIP',
+        returnGeometry: 'false',
+        resultRecordCount: '15'
+      });
+      const res = await fetch(`${LA_COUNTY_PARCEL_QUERY}?${params.toString()}`);
+      if (!res.ok) throw new Error(`LA County parcel request failed (${res.status})`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message || 'LA County parcel query error');
+      return {
+        features: data.features || [],
+        exceededTransferLimit: Boolean(data.exceededTransferLimit)
+      };
+    }
+
+    function uniqueApnDigitsFromParcelResult({ features, exceededTransferLimit }) {
+      const set = new Set();
+      for (const f of features) {
+        const d = pickApnDigitsFromAttributes(f.attributes);
+        if (d) set.add(d);
+      }
+      return {
+        apns: Array.from(set),
+        exceededTransferLimit,
+        featureCount: features.length
+      };
+    }
+
+    const LACOUNTY_THROTTLE_MS = 260;
+
+    function cleanSimpleLookupAddress(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return { queryAddress: '', zipPrefix: '' };
+      const zipPrefix = normalizeZipPrefix5(raw);
+      let queryAddress = raw;
+
+      if (raw.includes(',')) {
+        const parts = raw.split(',').map(p => p.trim()).filter(Boolean);
+        queryAddress = parts.find(p => /^\d/.test(p)) || parts[0] || raw;
+      }
+
+      queryAddress = queryAddress
+        .replace(/\b(CA|CALIFORNIA)\b\s*\d{5}(?:-\d{4})?\s*$/i, '')
+        .replace(/\d{5}(?:-\d{4})?\s*$/i, '')
+        .replace(/\b(CA|CALIFORNIA)\b\s*$/i, '')
+        .replace(/\s+(?:#|UNIT|APT|APARTMENT|STE|SUITE)\s+[A-Z0-9-]+$/i, '')
+        .trim();
+
+      return { queryAddress, zipPrefix };
+    }
+
+    function parseSimpleLookupInput(text, defaultZipPrefix) {
+      const raw = String(text || '').trim();
+      if (!raw) return [];
+      const fallbackZip = normalizeZipPrefix5(defaultZipPrefix);
+
+      const csvRows = parseCsv(raw).filter(row => row.some(cell => String(cell || '').trim()));
+      const hasCsvShape = csvRows.length > 1 && csvRows.some(row => row.length > 1);
+      if (hasCsvShape) {
+        const headers = csvRows[0].map(h => String(h || '').trim());
+        const addressIdx = findHeaderIndex(headers, ['property address', 'site address', 'street address', 'full address', 'address']);
+        if (addressIdx >= 0) {
+          const zipIdx = findHeaderIndex(headers, ['zip code', 'postal code', 'postcode', 'zip']);
+          return csvRows.slice(1)
+            .map((row, idx) => {
+              const inputAddress = String(row[addressIdx] || '').trim();
+              const cleaned = cleanSimpleLookupAddress(inputAddress);
+              return {
+                sourceRow: idx + 2,
+                inputAddress,
+                queryAddress: cleaned.queryAddress,
+                zipPrefix: zipIdx >= 0 ? normalizeZipPrefix5(row[zipIdx]) || cleaned.zipPrefix || fallbackZip : cleaned.zipPrefix || fallbackZip
+              };
+            })
+            .filter(item => item.inputAddress);
+        }
+      }
+
+      return raw.split(/\r?\n/)
+        .map((line, idx) => {
+          const inputAddress = line.trim();
+          const cleaned = cleanSimpleLookupAddress(inputAddress);
+          return {
+            sourceRow: idx + 1,
+            inputAddress,
+            queryAddress: cleaned.queryAddress,
+            zipPrefix: cleaned.zipPrefix || fallbackZip
+          };
+        })
+        .filter(item => item.inputAddress);
+    }
+
+    function buildSimpleLookupResult(input, fields) {
+      return {
+        row: input.sourceRow,
+        input_address: input.inputAddress,
+        query_address: input.queryAddress,
+        apn: formatApn(fields.apn),
+        zip_filter: input.zipPrefix,
+        status: fields.status,
+        candidate_apns: String(fields.candidateApns || '')
+          .split('|')
+          .map(formatApn)
+          .filter(Boolean)
+          .join(' | '),
+        parcel_features: fields.featureCount ?? '',
+        note: fields.note || ''
+      };
+    }
+
+    function setResultsReady(hasResults) {
+      els.downloadSimpleLookup.disabled = !hasResults;
+      els.copySimpleLookup.disabled = !hasResults;
+    }
+
+    async function runSimpleLookup() {
+      const inputs = parseSimpleLookupInput(els.simpleLookupInput.value, els.simpleDefaultZip.value);
+      if (!inputs.length) {
+        els.simpleLookupMessage.className = 'callout danger';
+        els.simpleLookupMessage.textContent = 'Paste at least one address first.';
+        return;
+      }
+
+      const results = [];
+      els.runSimpleLookup.disabled = true;
+      setResultsReady(false);
+      els.simpleLookupMessage.className = 'callout warn';
+
+      for (let i = 0; i < inputs.length; i += 1) {
+        const input = inputs[i];
+        els.simpleLookupMessage.textContent = `Looking up APNs… ${i + 1} / ${inputs.length}`;
+
+        const normalizedAddress = normalizeAddress(input.queryAddress);
+        if (!normalizedAddress) {
+          results.push(buildSimpleLookupResult(input, {
+            status: 'skipped',
+            note: 'No usable street address found'
+          }));
+          continue;
+        }
+
+        try {
+          const raw = await queryLaCountyParcelFeatures(normalizedAddress, input.zipPrefix);
+          const { apns, exceededTransferLimit, featureCount } = uniqueApnDigitsFromParcelResult(raw);
+          const limitNote = exceededTransferLimit ? ' Query hit record limit; review candidates carefully.' : '';
+
+          if (apns.length === 1) {
+            results.push(buildSimpleLookupResult(input, {
+              apn: apns[0],
+              status: 'matched',
+              candidateApns: apns[0],
+              featureCount,
+              note: `Exactly one distinct APN found.${limitNote}`.trim()
+            }));
+          } else if (apns.length > 1) {
+            results.push(buildSimpleLookupResult(input, {
+              status: 'ambiguous',
+              candidateApns: apns.join(' | '),
+              featureCount,
+              note: `Multiple distinct APNs matched this address.${limitNote}`.trim()
+            }));
+          } else if (featureCount > 0) {
+            results.push(buildSimpleLookupResult(input, {
+              status: 'unparsed',
+              featureCount,
+              note: `Parcel rows returned, but no usable AIN/APN field was found.${limitNote}`.trim()
+            }));
+          } else {
+            results.push(buildSimpleLookupResult(input, {
+              status: 'no_match',
+              featureCount,
+              note: 'No parcel features returned for this address'
+            }));
+          }
+        } catch (err) {
+          const msg = err && err.message ? err.message : String(err);
+          results.push(buildSimpleLookupResult(input, {
+            status: 'error',
+            note: msg
+          }));
+        }
+
+        if (i < inputs.length - 1) {
+          await new Promise(r => setTimeout(r, LACOUNTY_THROTTLE_MS));
+        }
+      }
+
+      state.simpleLookupRows = results;
+      const matched = results.filter(row => row.status === 'matched').length;
+      const needsReview = results.length - matched;
+      renderTable(els.simpleLookupTable, results);
+      els.simpleLookupMessage.className = needsReview ? 'callout warn' : 'callout ok';
+      els.simpleLookupMessage.textContent = `Lookup complete. ${matched.toLocaleString()} APN(s) matched; ${needsReview.toLocaleString()} row(s) need review.`;
+      setResultsReady(results.length > 0);
+      els.runSimpleLookup.disabled = false;
+    }
+
+    function clearSimpleLookup() {
+      state.simpleLookupRows = [];
+      els.simpleLookupInput.value = '';
+      setResultsReady(false);
+      els.simpleLookupMessage.className = 'callout';
+      els.simpleLookupMessage.textContent = 'Paste addresses above, then run the lookup.';
+      renderTable(els.simpleLookupTable, []);
+    }
+
+    async function copySimpleLookupToClipboard() {
+      if (!state.simpleLookupRows.length) return;
+      const text = toTsv(state.simpleLookupRows);
+      try {
+        await navigator.clipboard.writeText(text);
+        els.simpleLookupMessage.className = 'callout ok';
+        els.simpleLookupMessage.textContent = `Copied ${state.simpleLookupRows.length.toLocaleString()} row(s) to clipboard. Paste into Excel, Google Sheets, or a text editor.`;
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) {
+          els.simpleLookupMessage.className = 'callout ok';
+          els.simpleLookupMessage.textContent = `Copied ${state.simpleLookupRows.length.toLocaleString()} row(s) to clipboard.`;
+        } else {
+          els.simpleLookupMessage.className = 'callout danger';
+          els.simpleLookupMessage.textContent = 'Could not copy to clipboard. Try Download CSV instead.';
+        }
+      }
+    }
+
+    function renderTable(table, rows) {
+      if (!rows || !rows.length) {
+        table.innerHTML = '<thead><tr><th>No rows</th></tr></thead><tbody><tr><td>Nothing to show.</td></tr></tbody>';
+        return;
+      }
+      const headers = SIMPLE_LOOKUP_COLUMNS;
+      const thead = `<thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>`;
+      const tbody = `<tbody>${rows.map(row => `<tr>${headers.map(h => `<td>${escapeHtml(row[h])}</td>`).join('')}</tr>`).join('')}</tbody>`;
+      table.innerHTML = thead + tbody;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function downloadSimpleLookupCsv() {
+      if (!state.simpleLookupRows.length) return;
+      const blob = new Blob([toCsv(state.simpleLookupRows)], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'apn-lookup-results.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    renderTable(els.simpleLookupTable, []);
+  </script>
+</body>
+</html>

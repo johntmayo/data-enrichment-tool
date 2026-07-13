@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapbox Batch Geocoder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@700;800;900&family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper: #FDFBF7;
+            --card: #FFFFFF;
+            --ink: #1F2937;
+            --ink-secondary: #4B5563;
+            --navy: #314059;
+            --gold: #F59E0B;
+            --clay: #BC5838;
+            --teal: #347072;
+            --green: #283618;
+            --border: #1F2937;
+            --border-light: #E5E7EB;
+            --shadow: 6px 6px 0 #1F2937;
+            --shadow-hover: 8px 8px 0 #1F2937;
+        }
+
+        body {
+            font-family: 'Merriweather', Georgia, serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: var(--paper);
+            color: var(--ink);
+        }
+        .container {
+            background: var(--card);
+            padding: 32px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            box-shadow: var(--shadow);
+        }
+        h1 {
+            font-family: 'Chivo', sans-serif;
+            font-weight: 800;
+            color: var(--navy);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .title-icon {
+            height: 36px;
+            width: 36px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        hr.section-divider {
+            border: none;
+            border-top: 2px solid var(--border-light);
+            margin: 16px 0;
+        }
+        h3 {
+            font-family: 'Chivo', sans-serif;
+            font-weight: 700;
+            color: var(--navy);
+        }
+        .instructions {
+            border-left: 4px solid var(--navy);
+            background: #F0F4F8;
+            padding: 16px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-family: 'Merriweather', Georgia, serif;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            font-family: 'Chivo', sans-serif;
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ink);
+        }
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-light);
+            border-radius: 0;
+            font-size: 14px;
+            font-family: 'Merriweather', Georgia, serif;
+            box-sizing: border-box;
+            outline: none;
+        }
+        input[type="text"]:focus, input[type="file"]:focus, textarea:focus {
+            border-color: var(--navy);
+        }
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        button {
+            background-color: var(--gold);
+            color: var(--ink);
+            padding: 12px 30px;
+            border: 2px solid var(--border);
+            border-radius: 0;
+            cursor: pointer;
+            font-family: 'Chivo', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-right: 10px;
+            box-shadow: 4px 4px 0 var(--border);
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        button:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--border);
+        }
+        button:disabled {
+            background-color: var(--border-light);
+            color: var(--ink-secondary);
+            box-shadow: none;
+            transform: none;
+            cursor: not-allowed;
+        }
+        .download-btn {
+            background-color: var(--clay);
+            color: white;
+        }
+        .download-btn:hover {
+            background-color: var(--clay);
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            display: none;
+            font-family: 'Merriweather', Georgia, serif;
+            font-size: 14px;
+        }
+        #status.processing {
+            background-color: #FEF3C7;
+            border: 2px solid var(--gold);
+            color: var(--ink);
+            display: block;
+        }
+        #status.complete {
+            background-color: #ECFDF5;
+            border: 2px solid var(--green);
+            color: var(--green);
+            display: block;
+        }
+        #status.error {
+            background-color: #FEF2F2;
+            border: 2px solid var(--clay);
+            color: var(--clay);
+            display: block;
+        }
+        #results {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            border: 2px solid var(--border);
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: var(--navy);
+            color: white;
+            font-family: 'Chivo', sans-serif;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            border: 1px solid var(--border-light);
+            font-family: 'Merriweather', Georgia, serif;
+        }
+        tr:nth-child(even) td {
+            background-color: var(--paper);
+        }
+        .csv-info {
+            font-size: 12px;
+            color: var(--ink-secondary);
+            margin-top: 5px;
+            font-family: 'Merriweather', Georgia, serif;
+        }
+        #previewContent {
+            background: var(--paper);
+            padding: 10px;
+            border: 2px solid var(--border-light);
+            border-radius: 0;
+            font-size: 12px;
+            margin-top: 5px;
+            font-family: 'Merriweather', Georgia, serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><img src="geocode.svg" alt="" class="title-icon"> Mapbox Batch Geocoder</h1>
+        <hr class="section-divider">
+
+        <div class="instructions">
+            <strong>Instructions:</strong><br>
+            1. Upload your CSV file with columns: House, Street, City, State, Zip<br>
+            2. Click "Geocode Addresses"<br>
+            3. Download your results with Latitude/Longitude filled in
+        </div>
+
+        <label for="csvFile">Upload CSV File:</label>
+        <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(event)">
+        <div class="csv-info">
+            CSV should have columns: House, Street, City, State, Zip (Latitude, Longitude, Resident Name are optional)
+        </div>
+
+        <div id="csvPreview" style="margin-top: 15px; display: none;">
+            <strong>CSV Preview:</strong>
+            <div id="previewContent"></div>
+        </div>
+
+        <button onclick="geocodeAddresses()" id="geocodeBtn" style="display:none;">Geocode Addresses</button>
+        <button onclick="downloadCSV()" id="downloadBtn" class="download-btn" style="display:none;">Download CSV</button>
+
+        <div id="status"></div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        let csvData = null;
+        let csvHeaders = [];
+        let geocodedResults = [];
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    csvData = results.data;
+                    csvHeaders = results.meta.fields;
+                    
+                    // Show preview
+                    let preview = `Loaded ${csvData.length} rows with columns: ${csvHeaders.join(', ')}`;
+                    document.getElementById('previewContent').textContent = preview;
+                    document.getElementById('csvPreview').style.display = 'block';
+                    document.getElementById('geocodeBtn').style.display = 'inline-block';
+                    
+                    showStatus(`✓ Loaded ${csvData.length} rows from CSV`, 'complete');
+                },
+                error: function(error) {
+                    showStatus('Error parsing CSV: ' + error.message, 'error');
+                }
+            });
+        }
+
+        async function geocodeAddresses() {
+            if (!csvData || csvData.length === 0) {
+                showStatus('Please upload a CSV file first', 'error');
+                return;
+            }
+
+            geocodedResults = [];
+            document.getElementById('geocodeBtn').disabled = true;
+            document.getElementById('downloadBtn').style.display = 'none';
+            
+            showStatus(`Processing 0 of ${csvData.length} addresses...`, 'processing');
+
+            for (let i = 0; i < csvData.length; i++) {
+                const row = csvData[i];
+                showStatus(`Processing ${i + 1} of ${csvData.length} addresses...`, 'processing');
+                
+                // Build address from CSV columns
+                const house = row['House'] || '';
+                const street = row['Street'] || '';
+                const city = row['City'] || '';
+                const state = row['State'] || '';
+                const zip = row['Zip'] || '';
+                
+                const address = `${house} ${street}, ${city}, ${state} ${zip}`.trim();
+                
+                try {
+                    const response = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`API Error ${response.status}: ${errorText}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.message) {
+                        throw new Error(data.message);
+                    }
+                    
+                    // Create result with all original columns
+                    const result = { ...row };
+                    
+                    if (data.features && data.features.length > 0) {
+                        const feature = data.features[0];
+                        result['Latitude'] = feature.center[1];
+                        result['Longitude'] = feature.center[0];
+                        result['_status'] = 'success';
+                    } else {
+                        result['Latitude'] = '';
+                        result['Longitude'] = '';
+                        result['_status'] = 'not found';
+                    }
+                    
+                    geocodedResults.push(result);
+                } catch (error) {
+                    console.error('Geocoding error:', error);
+                    const result = { ...row };
+                    result['Latitude'] = '';
+                    result['Longitude'] = '';
+                    result['_status'] = 'error: ' + error.message;
+                    geocodedResults.push(result);
+                }
+                
+                // Rate limiting - wait 100ms between requests
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            displayResults();
+            document.getElementById('geocodeBtn').disabled = false;
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+            showStatus(`✓ Complete! Geocoded ${geocodedResults.length} addresses`, 'complete');
+        }
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h3>Results Preview (first 20 rows):</h3><table>';
+            
+            // Headers
+            html += '<tr>';
+            csvHeaders.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '<th>Status</th></tr>';
+            
+            // Rows (show first 20)
+            const displayRows = geocodedResults.slice(0, 20);
+            displayRows.forEach(result => {
+                html += '<tr>';
+                csvHeaders.forEach(header => {
+                    html += `<td>${result[header] || ''}</td>`;
+                });
+                html += `<td>${result['_status']}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</table>';
+            
+            if (geocodedResults.length > 20) {
+                html += `<p style="margin-top: 10px; font-size: 12px; color: #666;">Showing first 20 of ${geocodedResults.length} rows. Download CSV to see all results.</p>`;
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+
+        function downloadCSV() {
+            if (geocodedResults.length === 0) {
+                showStatus('No results to download', 'error');
+                return;
+            }
+
+            // Create CSV with Papa
+            const csv = Papa.unparse(geocodedResults.map(row => {
+                const cleanRow = { ...row };
+                delete cleanRow['_status'];
+                return cleanRow;
+            }));
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'geocoded_addresses.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+        }
+    </script>
+</body>
+</html>

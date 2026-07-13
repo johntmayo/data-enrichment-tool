@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data Enrichment Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chivo:wght@400;700;900&family=Lora:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --deep-space-blue: #304059;
+      --golden-orange: #f59e09;
+      --porcelain: #fdfbf8;
+      --floral-white: #fffdf5;
+      --rosy-copper: #bc5839;
+      --muted-olive: #afc892;
+      --dusty-mauve: #bc455a;
+      --light-caramel: #fdba77;
+      --apricot-cream: #f6cf98;
+      --sky-blue-light: #81bdc3;
+      --floral-white-warm: #fdf8ec;
+      --soft-blush: #f9d6d3;
+      --alabaster-grey: #e5e5e5;
+      --surface-white: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --border-color: #e5e5e5;
+      --font-ui: "Chivo", Arial, sans-serif;
+      --font-reading: "Lora", Georgia, serif;
+      --radius-small: 4px;
+      --radius-medium: 8px;
+      --radius-large: 10px;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 24px;
+      --space-6: 32px;
+      --space-7: 48px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background: var(--porcelain);
+      color: var(--text-primary);
+      font-family: var(--font-ui);
+    }
+
+    body {
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font-family: var(--font-ui);
+      font-size: 1rem;
+    }
+
+    button {
+      min-height: 44px;
+      border-radius: var(--radius-small);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.48;
+    }
+
+    :focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--golden-orange) 65%, white);
+      outline-offset: 2px;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      min-height: 76px;
+      padding: 16px 24px;
+      background: var(--deep-space-blue);
+      color: white;
+      border-bottom: 3px solid var(--text-primary);
+    }
+
+    .brand-logo {
+      display: block;
+      width: 58px;
+      height: 58px;
+      flex: 0 0 auto;
+      object-fit: contain;
+    }
+
+    .app-header h1 {
+      margin: 0;
+      font: 700 24px/1.2 var(--font-ui);
+    }
+
+    .app-header p {
+      margin: 3px 0 0;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 14px;
+    }
+
+    .page-container {
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .callout {
+      max-width: 48rem;
+      padding: 18px 22px;
+      background: var(--floral-white-warm);
+      border: 2px solid var(--golden-orange);
+      border-radius: var(--radius-medium);
+      color: var(--text-primary);
+      font: 400 15px/1.6 var(--font-reading);
+    }
+
+    .callout strong {
+      font-family: var(--font-ui);
+      color: var(--deep-space-blue);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: start;
+      margin-top: var(--space-5);
+    }
+
+    .stack {
+      display: grid;
+      gap: var(--space-4);
+    }
+
+    .stack-sm {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .card {
+      background: var(--surface-white);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-medium);
+      padding: 20px;
+      box-shadow: 4px 4px 0 var(--border-color);
+    }
+
+    .card h2,
+    .card h3 {
+      margin: 0;
+      color: var(--deep-space-blue);
+    }
+
+    .card h2 {
+      font-size: 22px;
+      line-height: 1.25;
+    }
+
+    .card h3 {
+      font-size: 18px;
+      line-height: 1.3;
+    }
+
+    .subtle {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .field label,
+    .field-label {
+      display: block;
+      margin-bottom: var(--space-2);
+      color: var(--text-primary);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .input,
+    .select,
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 14px;
+      background: white;
+      color: var(--text-primary);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-small);
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      background: var(--floral-white);
+      border: 2px dashed var(--deep-space-blue);
+      border-radius: var(--radius-small);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .button-row button {
+      flex: 1 1 auto;
+    }
+
+    .button-primary,
+    .button-highlight,
+    .button-secondary,
+    .button-destructive {
+      padding: 10px 16px;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .button-primary {
+      background: var(--deep-space-blue);
+      color: white;
+      border: 2px solid var(--deep-space-blue);
+    }
+
+    .button-highlight {
+      background: var(--golden-orange);
+      color: var(--deep-space-blue);
+      border: 2px solid var(--deep-space-blue);
+    }
+
+    .button-secondary {
+      background: white;
+      color: var(--deep-space-blue);
+      border: 2px solid var(--deep-space-blue);
+    }
+
+    .button-destructive {
+      background: var(--rosy-copper);
+      color: white;
+      border: 2px solid var(--rosy-copper);
+    }
+
+    .button-primary:hover:not(:disabled),
+    .button-highlight:hover:not(:disabled),
+    .button-secondary:hover:not(:disabled),
+    .button-destructive:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .check-card {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-2);
+      min-height: 72px;
+      padding: 12px;
+      background: var(--floral-white);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-small);
+    }
+
+    .check-card:has(input:checked) {
+      border-color: var(--deep-space-blue);
+      background: color-mix(in srgb, var(--golden-orange) 20%, white);
+    }
+
+    .check-card input {
+      margin-top: 3px;
+      accent-color: var(--deep-space-blue);
+    }
+
+    .check-card span {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .check-card small {
+      display: block;
+      margin-top: 2px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .compact-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-2);
+    }
+
+    .status {
+      padding: 14px 16px;
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-medium);
+      background: white;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .status.info {
+      background: color-mix(in srgb, var(--sky-blue-light) 28%, white);
+      border-color: var(--sky-blue-light);
+      color: var(--deep-space-blue);
+    }
+
+    .status.warn {
+      background: var(--apricot-cream);
+      border-color: var(--golden-orange);
+      color: var(--deep-space-blue);
+    }
+
+    .status.ok {
+      background: color-mix(in srgb, var(--muted-olive) 38%, white);
+      border-color: var(--muted-olive);
+      color: var(--deep-space-blue);
+    }
+
+    .status.error {
+      background: var(--rosy-copper);
+      border-color: var(--rosy-copper);
+      color: white;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-3);
+    }
+
+    .metric {
+      padding: 14px;
+      background: var(--floral-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--deep-space-blue);
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .toolbar-actions button {
+      min-height: 40px;
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    .column-list {
+      display: grid;
+      gap: var(--space-2);
+      max-height: 288px;
+      overflow: auto;
+      padding-right: var(--space-1);
+    }
+
+    .column-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: var(--space-2);
+      align-items: center;
+      padding: 8px 10px;
+      background: var(--floral-white);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-small);
+    }
+
+    .column-item label {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-width: 0;
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .column-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .column-item button {
+      min-height: 32px;
+      padding: 4px 8px;
+      background: white;
+      color: var(--deep-space-blue);
+      border: 1px solid var(--deep-space-blue);
+      font-size: 12px;
+    }
+
+    .results-shell {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      max-height: 560px;
+      border-top: 2px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      min-width: 720px;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: var(--deep-space-blue);
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    tr:nth-child(even) td {
+      background: var(--floral-white);
+    }
+
+    td.copyable {
+      cursor: copy;
+    }
+
+    td.copyable:hover {
+      background: color-mix(in srgb, var(--golden-orange) 16%, white);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 4px 8px;
+      border-radius: var(--radius-small);
+      background: var(--alabaster-grey);
+      color: var(--deep-space-blue);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      background: var(--muted-olive);
+    }
+
+    .badge.warn {
+      background: var(--apricot-cream);
+    }
+
+    .badge.error {
+      background: var(--rosy-copper);
+      color: white;
+    }
+
+    .empty {
+      padding: 48px 24px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .help {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app-header {
+        align-items: flex-start;
+        padding: 14px 16px;
+      }
+
+      .page-container {
+        padding: 16px;
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .option-grid,
+      .compact-grid,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+
+      .toolbar,
+      .toolbar-actions,
+      .toolbar-actions button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <img class="brand-logo" src="public/images/logo_white_transparent.png" alt="Altagether" />
+    <div>
+      <h1>Data enrichment tool</h1>
+      <p>Add parcel APNs, latitude, and longitude to pasted addresses or a CSV.</p>
+    </div>
+  </header>
+
+  <main class="page-container">
+    <section class="callout">
+      <strong>Use the shortest path that matches the list you have.</strong> Paste one address per line, paste a CSV, or upload a CSV. Then choose whether to look up APNs, coordinates, or both.
+    </section>
+
+    <div class="layout">
+      <section class="stack">
+        <div class="card stack">
+          <div>
+            <h2>1. Add addresses</h2>
+            <p class="subtle">Paste plain addresses or CSV data. Uploaded CSV files keep their original columns.</p>
+          </div>
+
+          <div class="field">
+            <label for="csvFile">Upload CSV file</label>
+            <input id="csvFile" type="file" accept=".csv,text/csv" />
+            <p class="help">Optional. Uploading replaces the pasted input below.</p>
+          </div>
+
+          <div class="field">
+            <label for="rawInput">Paste addresses or CSV</label>
+            <textarea id="rawInput" placeholder="123 Main St, Altadena, CA 91001&#10;456 Lake Ave&#10;&#10;Or paste CSV with an Address column"></textarea>
+          </div>
+
+          <div class="button-row">
+            <button id="parseButton" class="button-secondary" type="button">Preview rows</button>
+            <button id="clearButton" class="button-destructive" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <div>
+            <h2>2. Choose lookup</h2>
+            <p class="subtle">APN lookup uses LA County parcel data. Coordinate lookup uses the Mapbox-compatible geocoder endpoint.</p>
+          </div>
+
+          <div class="option-grid" aria-label="Lookup options">
+            <label class="check-card">
+              <input id="lookupApn" type="checkbox" checked />
+              <span>APN numbers<small>Find the parcel APN when one clear LA County parcel matches.</small></span>
+            </label>
+            <label class="check-card">
+              <input id="lookupCoords" type="checkbox" checked />
+              <span>Latitude and longitude<small>Fill coordinate columns from the first geocoder match.</small></span>
+            </label>
+          </div>
+
+          <div class="compact-grid">
+            <div class="field">
+              <label for="defaultCity">Default city</label>
+              <input id="defaultCity" class="input" type="text" value="Altadena" />
+            </div>
+            <div class="field">
+              <label for="defaultState">Default state</label>
+              <input id="defaultState" class="input" type="text" value="CA" />
+            </div>
+            <div class="field">
+              <label for="defaultZip">Default ZIP</label>
+              <input id="defaultZip" class="input" type="text" value="91001" inputmode="numeric" />
+            </div>
+          </div>
+        </div>
+
+        <div id="mappingCard" class="card stack hidden">
+          <div>
+            <h2>3. Confirm columns</h2>
+            <p class="subtle">Auto-detected columns are selected below. Change them if the CSV uses different names.</p>
+          </div>
+
+          <div class="field">
+            <label for="addressColumn">Full address column</label>
+            <select id="addressColumn" class="select"></select>
+            <p class="help">Choose this when your CSV already has one complete address column.</p>
+          </div>
+
+          <div class="compact-grid">
+            <div class="field">
+              <label for="houseColumn">House</label>
+              <select id="houseColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="streetColumn">Street</label>
+              <select id="streetColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="cityColumn">City</label>
+              <select id="cityColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="stateColumn">State</label>
+              <select id="stateColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="zipColumn">ZIP</label>
+              <select id="zipColumn" class="select"></select>
+            </div>
+          </div>
+
+          <button id="runButton" class="button-highlight" type="button">Run selected lookups</button>
+        </div>
+      </section>
+
+      <section class="stack">
+        <div id="statusBox" class="status info">Add addresses, then preview rows.</div>
+
+        <div class="metric-grid" aria-label="Result summary">
+          <div class="metric"><strong id="rowCount">0</strong><span>rows loaded</span></div>
+          <div class="metric"><strong id="apnCount">0</strong><span>APNs matched</span></div>
+          <div class="metric"><strong id="coordCount">0</strong><span>coordinates matched</span></div>
+          <div class="metric"><strong id="reviewCount">0</strong><span>rows to review</span></div>
+        </div>
+
+        <div id="columnsCard" class="card stack hidden">
+          <div class="toolbar">
+            <div>
+              <h3>Column order</h3>
+              <p class="subtle">Show, hide, or move columns before copying or downloading.</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="showAllColumns" class="button-secondary" type="button">Show all</button>
+              <button id="resultsFirst" class="button-secondary" type="button">Results first</button>
+            </div>
+          </div>
+          <div id="columnList" class="column-list"></div>
+        </div>
+
+        <div class="card results-shell">
+          <div class="toolbar" style="padding: 20px;">
+            <div>
+              <h2>Results</h2>
+              <p class="subtle">Click any cell to copy it. Copy all uses tab-separated text for spreadsheets.</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="copyAllButton" class="button-secondary" type="button" disabled>Copy all</button>
+              <button id="copyApnButton" class="button-secondary" type="button" disabled>Copy APNs</button>
+              <button id="copyCoordsButton" class="button-secondary" type="button" disabled>Copy coordinates</button>
+              <button id="downloadButton" class="button-primary" type="button" disabled>Download CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table id="resultsTable">
+              <tbody><tr><td class="empty">No rows yet.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    const LA_COUNTY_PARCEL_QUERY =
+      'https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/LA_County_Parcels/FeatureServer/0/query';
+
+    const state = {
+      sourceName: '',
+      inputRows: [],
+      headers: [],
+      results: [],
+      columns: []
+    };
+
+    const els = {
+      csvFile: document.getElementById('csvFile'),
+      rawInput: document.getElementById('rawInput'),
+      parseButton: document.getElementById('parseButton'),
+      clearButton: document.getElementById('clearButton'),
+      lookupApn: document.getElementById('lookupApn'),
+      lookupCoords: document.getElementById('lookupCoords'),
+      defaultCity: document.getElementById('defaultCity'),
+      defaultState: document.getElementById('defaultState'),
+      defaultZip: document.getElementById('defaultZip'),
+      mappingCard: document.getElementById('mappingCard'),
+      addressColumn: document.getElementById('addressColumn'),
+      houseColumn: document.getElementById('houseColumn'),
+      streetColumn: document.getElementById('streetColumn'),
+      cityColumn: document.getElementById('cityColumn'),
+      stateColumn: document.getElementById('stateColumn'),
+      zipColumn: document.getElementById('zipColumn'),
+      runButton: document.getElementById('runButton'),
+      statusBox: document.getElementById('statusBox'),
+      rowCount: document.getElementById('rowCount'),
+      apnCount: document.getElementById('apnCount'),
+      coordCount: document.getElementById('coordCount'),
+      reviewCount: document.getElementById('reviewCount'),
+      columnsCard: document.getElementById('columnsCard'),
+      columnList: document.getElementById('columnList'),
+      showAllColumns: document.getElementById('showAllColumns'),
+      resultsFirst: document.getElementById('resultsFirst'),
+      resultsTable: document.getElementById('resultsTable'),
+      copyAllButton: document.getElementById('copyAllButton'),
+      copyApnButton: document.getElementById('copyApnButton'),
+      copyCoordsButton: document.getElementById('copyCoordsButton'),
+      downloadButton: document.getElementById('downloadButton')
+    };
+
+    const RESULT_COLUMNS = [
+      'lookup_address',
+      'apn',
+      'latitude',
+      'longitude',
+      'lookup_status',
+      'apn_status',
+      'geocode_status',
+      'candidate_apns',
+      'notes'
+    ];
+
+    els.csvFile.addEventListener('change', handleFileUpload);
+    els.parseButton.addEventListener('click', () => parseCurrentInput());
+    els.clearButton.addEventListener('click', clearAll);
+    els.runButton.addEventListener('click', () => { void runLookups(); });
+    els.copyAllButton.addEventListener('click', () => { void copyRows('all'); });
+    els.copyApnButton.addEventListener('click', () => { void copyRows('apn'); });
+    els.copyCoordsButton.addEventListener('click', () => { void copyRows('coords'); });
+    els.downloadButton.addEventListener('click', downloadCsv);
+    els.showAllColumns.addEventListener('click', showAllColumns);
+    els.resultsFirst.addEventListener('click', moveResultColumnsFirst);
+
+    function handleFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        els.rawInput.value = String(reader.result || '');
+        state.sourceName = file.name.replace(/\.csv$/i, '');
+        parseCurrentInput();
+      };
+      reader.onerror = () => setStatus('error', 'Could not read the selected CSV file.');
+      reader.readAsText(file);
+    }
+
+    function parseCurrentInput() {
+      const raw = els.rawInput.value.trim();
+      if (!raw) {
+        setStatus('error', 'Paste addresses or upload a CSV before previewing rows.');
+        return;
+      }
+
+      const parsed = parseInput(raw);
+      state.inputRows = parsed.rows;
+      state.headers = parsed.headers;
+      state.results = parsed.rows.map((row, index) => ({
+        ...row,
+        lookup_address: buildAddressFromRow(row, parsed.headers, parsed.autoMap),
+        apn: '',
+        latitude: '',
+        longitude: '',
+        lookup_status: 'ready',
+        apn_status: '',
+        geocode_status: '',
+        candidate_apns: '',
+        notes: ''
+      }));
+
+      setupColumnMapping(parsed.autoMap);
+      setupColumns();
+      renderColumnList();
+      renderResults();
+      updateSummary();
+      setControlsReady(state.results.length > 0);
+      els.mappingCard.classList.remove('hidden');
+      els.columnsCard.classList.remove('hidden');
+      setStatus('ok', `Loaded ${state.results.length.toLocaleString()} row(s). Confirm columns, then run selected lookups.`);
+    }
+
+    function parseInput(text) {
+      const rows = parseCsv(text).filter(row => row.some(cell => String(cell || '').trim()));
+      const hasCsvShape = rows.length > 1 && rows.some(row => row.length > 1);
+
+      if (hasCsvShape) {
+        const firstRow = rows[0].map(cell => String(cell || '').trim());
+        const hasLikelyHeader = firstRow.some(cell => /address|street|house|city|state|zip|lat|lon|apn/i.test(cell));
+        if (!hasLikelyHeader) return parsePlainAddressLines(text);
+
+        const headers = firstRow.map((header, index) => header || `Column ${index + 1}`);
+        const dataRows = rows.slice(1);
+        const objects = dataRows.map(row => rowToObject(headers, row));
+        return { headers, rows: objects, autoMap: getAutoMap(headers) };
+      }
+
+      return parsePlainAddressLines(text);
+    }
+
+    function parsePlainAddressLines(text) {
+      const plainRows = text.split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map(address => ({ Address: address }));
+      return {
+        headers: ['Address'],
+        rows: plainRows,
+        autoMap: { address: 'Address', house: '', street: '', city: '', state: '', zip: '' }
+      };
+    }
+
+    function rowToObject(headers, row) {
+      const object = {};
+      headers.forEach((header, index) => {
+        object[header] = String(row[index] || '').trim();
+      });
+      return object;
+    }
+
+    function getAutoMap(headers) {
+      return {
+        address: findHeader(headers, ['property address', 'site address', 'street address', 'full address', 'mailing address', 'address']),
+        house: findHeader(headers, ['house number', 'house no', 'house', 'situs house no']),
+        street: findHeader(headers, ['street name', 'street', 'situs street']),
+        city: findHeader(headers, ['city', 'situs city']),
+        state: findHeader(headers, ['state']),
+        zip: findHeader(headers, ['zip code', 'postal code', 'postcode', 'zip', 'situs zip'])
+      };
+    }
+
+    function findHeader(headers, candidates) {
+      const normalized = headers.map(header => ({ header, key: normalizeHeader(header) }));
+      for (const candidate of candidates) {
+        const key = normalizeHeader(candidate);
+        const exact = normalized.find(item => item.key === key);
+        if (exact) return exact.header;
+        const partial = normalized.find(item => item.key.includes(key));
+        if (partial) return partial.header;
+      }
+      return '';
+    }
+
+    function normalizeHeader(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function setupColumnMapping(autoMap) {
+      const options = ['', ...state.headers];
+      fillSelect(els.addressColumn, options, autoMap.address);
+      fillSelect(els.houseColumn, options, autoMap.house);
+      fillSelect(els.streetColumn, options, autoMap.street);
+      fillSelect(els.cityColumn, options, autoMap.city);
+      fillSelect(els.stateColumn, options, autoMap.state);
+      fillSelect(els.zipColumn, options, autoMap.zip);
+    }
+
+    function fillSelect(select, options, selected) {
+      select.innerHTML = options.map(option => {
+        const label = option || 'None';
+        return `<option value="${escapeHtml(option)}"${option === selected ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+      }).join('');
+    }
+
+    function setupColumns() {
+      const present = new Set([...state.headers, ...RESULT_COLUMNS]);
+      state.columns = Array.from(present).map(name => ({
+        name,
+        visible: !['apn_status', 'geocode_status', 'candidate_apns'].includes(name)
+      }));
+    }
+
+    function renderColumnList() {
+      els.columnList.innerHTML = state.columns.map((column, index) => `
+        <div class="column-item">
+          <label title="${escapeHtml(column.name)}">
+            <input type="checkbox" data-column-visible="${index}" ${column.visible ? 'checked' : ''}>
+            <span class="column-name">${escapeHtml(column.name)}</span>
+          </label>
+          <button type="button" data-column-up="${index}" ${index === 0 ? 'disabled' : ''}>Up</button>
+          <button type="button" data-column-down="${index}" ${index === state.columns.length - 1 ? 'disabled' : ''}>Down</button>
+        </div>
+      `).join('');
+
+      els.columnList.querySelectorAll('[data-column-visible]').forEach(input => {
+        input.addEventListener('change', event => {
+          const index = Number(event.currentTarget.dataset.columnVisible);
+          state.columns[index].visible = event.currentTarget.checked;
+          renderResults();
+        });
+      });
+
+      els.columnList.querySelectorAll('[data-column-up]').forEach(button => {
+        button.addEventListener('click', event => moveColumn(Number(event.currentTarget.dataset.columnUp), -1));
+      });
+
+      els.columnList.querySelectorAll('[data-column-down]').forEach(button => {
+        button.addEventListener('click', event => moveColumn(Number(event.currentTarget.dataset.columnDown), 1));
+      });
+    }
+
+    function moveColumn(index, direction) {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= state.columns.length) return;
+      const [column] = state.columns.splice(index, 1);
+      state.columns.splice(nextIndex, 0, column);
+      renderColumnList();
+      renderResults();
+    }
+
+    function showAllColumns() {
+      state.columns.forEach(column => { column.visible = true; });
+      renderColumnList();
+      renderResults();
+    }
+
+    function moveResultColumnsFirst() {
+      const resultSet = new Set(RESULT_COLUMNS);
+      state.columns.sort((a, b) => {
+        const ar = resultSet.has(a.name) ? 0 : 1;
+        const br = resultSet.has(b.name) ? 0 : 1;
+        return ar - br;
+      });
+      renderColumnList();
+      renderResults();
+    }
+
+    async function runLookups() {
+      if (!state.inputRows.length) {
+        setStatus('error', 'Preview rows before running a lookup.');
+        return;
+      }
+
+      const shouldLookupApn = els.lookupApn.checked;
+      const shouldLookupCoords = els.lookupCoords.checked;
+      if (!shouldLookupApn && !shouldLookupCoords) {
+        setStatus('error', 'Choose APN numbers, latitude and longitude, or both.');
+        return;
+      }
+
+      els.runButton.disabled = true;
+      setControlsReady(false);
+      setStatus('warn', `Starting lookup for ${state.inputRows.length.toLocaleString()} row(s).`);
+
+      for (let i = 0; i < state.results.length; i += 1) {
+        const result = state.results[i];
+        const address = buildAddressFromCurrentMapping(result);
+        result.lookup_address = address;
+        result.lookup_status = 'processing';
+        result.notes = '';
+        renderResults();
+        setStatus('warn', `Working on row ${i + 1} of ${state.results.length}: ${address || 'missing address'}`);
+
+        if (!address) {
+          result.lookup_status = 'skipped';
+          result.notes = appendNote(result.notes, 'No usable address found.');
+          continue;
+        }
+
+        if (shouldLookupApn) {
+          await enrichApn(result, address);
+          await wait(260);
+        }
+
+        if (shouldLookupCoords) {
+          await enrichCoordinates(result, address);
+          await wait(110);
+        }
+
+        result.lookup_status = getCombinedStatus(result, shouldLookupApn, shouldLookupCoords);
+      }
+
+      renderResults();
+      updateSummary();
+      setControlsReady(true);
+      els.runButton.disabled = false;
+      const review = countReviewRows();
+      setStatus(review ? 'warn' : 'ok', `Lookup complete. ${review.toLocaleString()} row(s) need review.`);
+    }
+
+    async function enrichApn(result, address) {
+      result.apn_status = 'processing';
+      const cleaned = cleanAddressForParcelLookup(address);
+      const normalizedAddress = normalizeAddress(cleaned.queryAddress);
+      const zipPrefix = cleaned.zipPrefix || normalizeZipPrefix5(valueFromResult(result, els.zipColumn.value)) || normalizeZipPrefix5(els.defaultZip.value);
+
+      if (!normalizedAddress) {
+        result.apn_status = 'skipped';
+        result.notes = appendNote(result.notes, 'APN skipped: no street address.');
+        return;
+      }
+
+      try {
+        const raw = await queryLaCountyParcelFeatures(normalizedAddress, zipPrefix);
+        const { apns, exceededTransferLimit, featureCount } = uniqueApnDigitsFromParcelResult(raw);
+        const limitNote = exceededTransferLimit ? ' Query hit record limit.' : '';
+
+        if (apns.length === 1) {
+          result.apn = formatApn(apns[0]);
+          result.candidate_apns = formatApn(apns[0]);
+          result.apn_status = 'matched';
+        } else if (apns.length > 1) {
+          result.apn = '';
+          result.candidate_apns = apns.map(formatApn).join(' | ');
+          result.apn_status = 'ambiguous';
+          result.notes = appendNote(result.notes, `Multiple APNs matched.${limitNote}`.trim());
+        } else if (featureCount > 0) {
+          result.apn_status = 'unparsed';
+          result.notes = appendNote(result.notes, `Parcel rows returned without APN/AIN.${limitNote}`.trim());
+        } else {
+          result.apn_status = 'no match';
+          result.notes = appendNote(result.notes, 'No parcel match found.');
+        }
+      } catch (error) {
+        result.apn_status = 'error';
+        result.notes = appendNote(result.notes, `APN error: ${error.message || error}`);
+      }
+    }
+
+    async function enrichCoordinates(result, address) {
+      result.geocode_status = 'processing';
+      const endpoint = '/api/geocode';
+
+      try {
+        const separator = endpoint.includes('?') ? '&' : '?';
+        const response = await fetch(`${endpoint}${separator}address=${encodeURIComponent(address)}`);
+        if (!response.ok) throw new Error(`geocoder returned ${response.status}`);
+        const data = await response.json();
+        const feature = data.features && data.features[0];
+        const center = feature && feature.center;
+
+        if (Array.isArray(center) && center.length >= 2) {
+          result.longitude = center[0];
+          result.latitude = center[1];
+          result.geocode_status = 'matched';
+        } else {
+          result.longitude = '';
+          result.latitude = '';
+          result.geocode_status = 'no match';
+          result.notes = appendNote(result.notes, 'No coordinate match found.');
+        }
+      } catch (error) {
+        result.longitude = '';
+        result.latitude = '';
+        result.geocode_status = 'error';
+        result.notes = appendNote(result.notes, `Geocode error: ${error.message || error}`);
+      }
+    }
+
+    function buildAddressFromCurrentMapping(row) {
+      return buildAddressFromRow(row, state.headers, {
+        address: els.addressColumn.value,
+        house: els.houseColumn.value,
+        street: els.streetColumn.value,
+        city: els.cityColumn.value,
+        state: els.stateColumn.value,
+        zip: els.zipColumn.value
+      });
+    }
+
+    function buildAddressFromRow(row, headers, map) {
+      const fullAddress = valueFromResult(row, map.address);
+      if (fullAddress) return fullAddress;
+
+      const house = valueFromResult(row, map.house);
+      const street = valueFromResult(row, map.street);
+      const city = valueFromResult(row, map.city) || els.defaultCity.value.trim();
+      const stateValue = valueFromResult(row, map.state) || els.defaultState.value.trim();
+      const zip = valueFromResult(row, map.zip) || els.defaultZip.value.trim();
+      const streetLine = [house, street].filter(Boolean).join(' ').trim();
+
+      if (!streetLine) {
+        const firstUseful = headers.map(header => valueFromResult(row, header)).find(value => /\d/.test(value) && /[a-z]/i.test(value));
+        return firstUseful || '';
+      }
+
+      return [streetLine, city, [stateValue, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+    }
+
+    function valueFromResult(row, key) {
+      if (!key) return '';
+      return String(row[key] || '').trim();
+    }
+
+    function getCombinedStatus(result, wantsApn, wantsCoords) {
+      const statuses = [];
+      if (wantsApn) statuses.push(result.apn_status);
+      if (wantsCoords) statuses.push(result.geocode_status);
+      if (statuses.every(status => status === 'matched')) return 'matched';
+      if (statuses.some(status => status === 'error')) return 'error';
+      if (statuses.some(status => ['ambiguous', 'unparsed', 'no match'].includes(status))) return 'review';
+      return statuses.filter(Boolean).join(' + ') || 'complete';
+    }
+
+    function renderResults() {
+      if (!state.results.length) {
+        els.resultsTable.innerHTML = '<tbody><tr><td class="empty">No rows yet.</td></tr></tbody>';
+        return;
+      }
+
+      const visibleColumns = state.columns.filter(column => column.visible).map(column => column.name);
+      if (!visibleColumns.length) {
+        els.resultsTable.innerHTML = '<tbody><tr><td class="empty">No columns selected.</td></tr></tbody>';
+        return;
+      }
+
+      const thead = `<thead><tr>${visibleColumns.map(column => `<th>${escapeHtml(column)}</th>`).join('')}</tr></thead>`;
+      const tbody = `<tbody>${state.results.map(row => `
+        <tr>${visibleColumns.map(column => renderCell(row, column)).join('')}</tr>
+      `).join('')}</tbody>`;
+      els.resultsTable.innerHTML = thead + tbody;
+
+      els.resultsTable.querySelectorAll('td.copyable').forEach(cell => {
+        cell.addEventListener('click', () => {
+          const value = cell.dataset.value || '';
+          if (value) void copyText(value, `Copied "${value}" to clipboard.`);
+        });
+      });
+    }
+
+    function renderCell(row, column) {
+      const value = row[column] ?? '';
+      if (column === 'lookup_status' || column === 'apn_status' || column === 'geocode_status') {
+        const kind = getBadgeKind(value);
+        return `<td><span class="badge ${kind}">${escapeHtml(value || 'blank')}</span></td>`;
+      }
+      return `<td class="copyable" data-value="${escapeHtml(value)}">${escapeHtml(value)}</td>`;
+    }
+
+    function getBadgeKind(value) {
+      const key = String(value || '').toLowerCase();
+      if (key === 'matched' || key === 'ready' || key === 'complete') return 'ok';
+      if (key === 'error') return 'error';
+      if (key.includes('review') || key.includes('ambiguous') || key.includes('no match') || key.includes('unparsed')) return 'warn';
+      return '';
+    }
+
+    function updateSummary() {
+      els.rowCount.textContent = state.results.length.toLocaleString();
+      els.apnCount.textContent = state.results.filter(row => row.apn).length.toLocaleString();
+      els.coordCount.textContent = state.results.filter(row => row.latitude && row.longitude).length.toLocaleString();
+      els.reviewCount.textContent = countReviewRows().toLocaleString();
+    }
+
+    function countReviewRows() {
+      return state.results.filter(row => {
+        const status = `${row.lookup_status} ${row.apn_status} ${row.geocode_status}`.toLowerCase();
+        return status.includes('error') || status.includes('review') || status.includes('ambiguous') || status.includes('no match') || status.includes('unparsed');
+      }).length;
+    }
+
+    function setControlsReady(hasRows) {
+      els.copyAllButton.disabled = !hasRows;
+      els.downloadButton.disabled = !hasRows;
+      els.copyApnButton.disabled = !hasRows || !state.results.some(row => row.apn || row.candidate_apns);
+      els.copyCoordsButton.disabled = !hasRows || !state.results.some(row => row.latitude && row.longitude);
+    }
+
+    async function copyRows(mode) {
+      if (!state.results.length) return;
+
+      let columns;
+      let message;
+      if (mode === 'apn') {
+        columns = ['lookup_address', 'apn', 'candidate_apns', 'apn_status'];
+        message = 'Copied APN columns to clipboard.';
+      } else if (mode === 'coords') {
+        columns = ['lookup_address', 'latitude', 'longitude', 'geocode_status'];
+        message = 'Copied coordinate columns to clipboard.';
+      } else {
+        columns = state.columns.filter(column => column.visible).map(column => column.name);
+        message = 'Copied all visible columns to clipboard.';
+      }
+
+      await copyText(toDelimited(state.results, columns, '\t'), message);
+    }
+
+    async function copyText(text, successMessage) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus('ok', successMessage);
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        setStatus(ok ? 'ok' : 'error', ok ? successMessage : 'Could not copy to clipboard. Use Download CSV instead.');
+      }
+    }
+
+    function downloadCsv() {
+      if (!state.results.length) return;
+      const columns = state.columns.filter(column => column.visible).map(column => column.name);
+      const blob = new Blob([toDelimited(state.results, columns, ',')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const baseName = state.sourceName || 'lot-weeding-enriched-addresses';
+      a.href = url;
+      a.download = `${baseName}-enriched.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('ok', 'Downloaded CSV with the current visible columns.');
+    }
+
+    function toDelimited(rows, columns, delimiter) {
+      const escape = delimiter === ',' ? csvEscape : tsvEscape;
+      const lines = [columns.map(escape).join(delimiter)];
+      rows.forEach(row => {
+        lines.push(columns.map(column => escape(row[column] ?? '')).join(delimiter));
+      });
+      return lines.join('\n');
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let i = 0;
+      let inQuotes = false;
+
+      while (i < text.length) {
+        const char = text[i];
+        const next = text[i + 1];
+
+        if (inQuotes) {
+          if (char === '"' && next === '"') {
+            cell += '"';
+            i += 2;
+            continue;
+          }
+          if (char === '"') {
+            inQuotes = false;
+            i += 1;
+            continue;
+          }
+          cell += char;
+          i += 1;
+          continue;
+        }
+
+        if (char === '"') {
+          inQuotes = true;
+          i += 1;
+          continue;
+        }
+
+        if (char === ',') {
+          row.push(cell);
+          cell = '';
+          i += 1;
+          continue;
+        }
+
+        if (char === '\n') {
+          row.push(cell);
+          rows.push(row);
+          row = [];
+          cell = '';
+          i += 1;
+          continue;
+        }
+
+        if (char === '\r') {
+          i += 1;
+          continue;
+        }
+
+        cell += char;
+        i += 1;
+      }
+
+      row.push(cell);
+      rows.push(row);
+      return rows;
+    }
+
+    function csvEscape(value) {
+      const text = String(value ?? '');
+      if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+      return text;
+    }
+
+    function tsvEscape(value) {
+      return String(value ?? '').replace(/\t/g, ' ').replace(/\r?\n/g, ' ');
+    }
+
+    function normalizeAddress(value) {
+      return String(value || '')
+        .toUpperCase()
+        .replace(/\./g, '')
+        .replace(/,/g, ' ')
+        .replace(/\bNORTH\b/g, 'N')
+        .replace(/\bSOUTH\b/g, 'S')
+        .replace(/\bEAST\b/g, 'E')
+        .replace(/\bWEST\b/g, 'W')
+        .replace(/\bSTREET\b/g, 'ST')
+        .replace(/\bAVENUE\b/g, 'AVE')
+        .replace(/\bBOULEVARD\b/g, 'BLVD')
+        .replace(/\bDRIVE\b/g, 'DR')
+        .replace(/\bROAD\b/g, 'RD')
+        .replace(/\bWY\b/g, 'WAY')
+        .replace(/\bCIRCLE\b/g, 'CIR')
+        .replace(/\bPLACE\b/g, 'PL')
+        .replace(/\bCOURT\b/g, 'CT')
+        .replace(/\bLANE\b/g, 'LN')
+        .replace(/\bTERRACE\b/g, 'TER')
+        .replace(/\bHIGHWAY\b/g, 'HWY')
+        .replace(/\bMOUNT\b/g, 'MT')
+        .replace(/#\s*/g, ' UNIT ')
+        .replace(/\bAPT\b/g, 'UNIT')
+        .replace(/\bAPARTMENT\b/g, 'UNIT')
+        .replace(/\bSTE\b/g, 'UNIT')
+        .replace(/\bSUITE\b/g, 'UNIT')
+        .replace(/\b1\/2\b/g, 'HALF')
+        .replace(/[^A-Z0-9 ]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function cleanAddressForParcelLookup(value) {
+      const raw = String(value || '').trim();
+      if (!raw) return { queryAddress: '', zipPrefix: '' };
+      const zipPrefix = normalizeZipPrefix5(raw);
+      let queryAddress = raw;
+
+      if (raw.includes(',')) {
+        const parts = raw.split(',').map(part => part.trim()).filter(Boolean);
+        queryAddress = parts.find(part => /^\d/.test(part)) || parts[0] || raw;
+      }
+
+      queryAddress = queryAddress
+        .replace(/\b(CA|CALIFORNIA)\b\s*\d{5}(?:-\d{4})?\s*$/i, '')
+        .replace(/\d{5}(?:-\d{4})?\s*$/i, '')
+        .replace(/\b(CA|CALIFORNIA)\b\s*$/i, '')
+        .replace(/\s+(?:#|UNIT|APT|APARTMENT|STE|SUITE)\s+[A-Z0-9-]+$/i, '')
+        .trim();
+
+      return { queryAddress, zipPrefix };
+    }
+
+    function normalizeZipPrefix5(value) {
+      const digits = String(value || '').replace(/\D/g, '');
+      return digits.length >= 5 ? digits.slice(0, 5) : '';
+    }
+
+    function normalizeApn(value) {
+      return String(value || '').replace(/[^0-9]/g, '').trim();
+    }
+
+    function formatApn(value) {
+      const digits = normalizeApn(value);
+      if (digits.length !== 10) return digits;
+      return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
+    }
+
+    function parseHouseAndStreet(normalizedAddress) {
+      const match = String(normalizedAddress || '').match(/^(\d+[A-Z]?)\s+(.+)$/);
+      if (!match) return { house: '', street: '' };
+      return { house: match[1], street: match[2].trim() };
+    }
+
+    function buildLaCountyWhereClause(normalizedAddress, zipPrefix5) {
+      const { house, street } = parseHouseAndStreet(normalizedAddress);
+      let core;
+      if (house && street) {
+        const h = escapeSqlLiteral(house);
+        const s = escapeSqlLiteral(street);
+        core = `SitusHouseNo = '${h}' AND UPPER(SitusStreet) LIKE UPPER('${s}%')`;
+      } else {
+        const full = escapeSqlLiteral(normalizedAddress);
+        core = `UPPER(SitusAddress) LIKE UPPER('%${full}%')`;
+      }
+      if (zipPrefix5) {
+        const z = escapeSqlLiteral(zipPrefix5);
+        return `(${core}) AND SitusZIP LIKE '${z}%'`;
+      }
+      return core;
+    }
+
+    function escapeSqlLiteral(value) {
+      return String(value ?? '').replace(/'/g, "''");
+    }
+
+    async function queryLaCountyParcelFeatures(normalizedAddress, zipPrefix5) {
+      const params = new URLSearchParams({
+        f: 'json',
+        where: buildLaCountyWhereClause(normalizedAddress, zipPrefix5 || ''),
+        outFields: 'APN,AIN,SitusAddress,SitusStreet,SitusHouseNo,SitusCity,SitusZIP',
+        returnGeometry: 'false',
+        resultRecordCount: '15'
+      });
+      const response = await fetch(`${LA_COUNTY_PARCEL_QUERY}?${params.toString()}`);
+      if (!response.ok) throw new Error(`LA County parcel request failed (${response.status})`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error.message || 'LA County parcel query error');
+      return {
+        features: data.features || [],
+        exceededTransferLimit: Boolean(data.exceededTransferLimit)
+      };
+    }
+
+    function uniqueApnDigitsFromParcelResult({ features, exceededTransferLimit }) {
+      const set = new Set();
+      for (const feature of features) {
+        const attrs = feature.attributes || {};
+        const digits = normalizeApn(attrs.AIN) || normalizeApn(attrs.APN);
+        if (digits) set.add(digits);
+      }
+      return {
+        apns: Array.from(set),
+        exceededTransferLimit,
+        featureCount: features.length
+      };
+    }
+
+    function appendNote(existing, note) {
+      return [existing, note].filter(Boolean).join(' ');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function setStatus(type, message) {
+      els.statusBox.className = `status ${type}`;
+      els.statusBox.textContent = message;
+    }
+
+    function clearAll() {
+      state.sourceName = '';
+      state.inputRows = [];
+      state.headers = [];
+      state.results = [];
+      state.columns = [];
+      els.csvFile.value = '';
+      els.rawInput.value = '';
+      els.mappingCard.classList.add('hidden');
+      els.columnsCard.classList.add('hidden');
+      setControlsReady(false);
+      updateSummary();
+      renderResults();
+      setStatus('info', 'Add addresses, then preview rows.');
+    }
+
+    function wait(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
