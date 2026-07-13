@@ -696,12 +696,20 @@
 
           <div class="compact-grid">
             <div class="field">
-              <label for="houseColumn">House</label>
+              <label for="houseColumn">House number</label>
               <select id="houseColumn" class="select"></select>
             </div>
             <div class="field">
-              <label for="streetColumn">Street</label>
+              <label for="directionColumn">Direction <span style="font-weight:400;color:var(--text-secondary)">(N/S/E/W)</span></label>
+              <select id="directionColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="streetColumn">Street name</label>
               <select id="streetColumn" class="select"></select>
+            </div>
+            <div class="field">
+              <label for="unitColumn">Unit / apt</label>
+              <select id="unitColumn" class="select"></select>
             </div>
             <div class="field">
               <label for="cityColumn">City</label>
@@ -793,7 +801,9 @@
       mappingCard: document.getElementById('mappingCard'),
       addressColumn: document.getElementById('addressColumn'),
       houseColumn: document.getElementById('houseColumn'),
+      directionColumn: document.getElementById('directionColumn'),
       streetColumn: document.getElementById('streetColumn'),
+      unitColumn: document.getElementById('unitColumn'),
       cityColumn: document.getElementById('cityColumn'),
       stateColumn: document.getElementById('stateColumn'),
       zipColumn: document.getElementById('zipColumn'),
@@ -891,12 +901,18 @@
 
       if (hasCsvShape) {
         const firstRow = rows[0].map(cell => String(cell || '').trim());
-        const hasLikelyHeader = firstRow.some(cell => /address|street|house|city|state|zip|lat|lon|apn/i.test(cell));
+        const hasLikelyHeader = firstRow.some(cell => /address|street|house|city|state|zip|lat|lon|apn|direction|unit/i.test(cell));
         if (!hasLikelyHeader) return parsePlainAddressLines(text);
 
-        const headers = firstRow.map((header, index) => header || `Column ${index + 1}`);
+        // Drop columns whose header is blank — these are trailing empty columns
+        const keptIndices = firstRow.reduce((acc, h, i) => { if (h) acc.push(i); return acc; }, []);
+        const headers = keptIndices.map(i => firstRow[i]);
         const dataRows = rows.slice(1);
-        const objects = dataRows.map(row => rowToObject(headers, row));
+        const objects = dataRows.map(row => {
+          const obj = {};
+          keptIndices.forEach(i => { obj[headers[keptIndices.indexOf(i)]] = String(row[i] || '').trim(); });
+          return obj;
+        });
         return { headers, rows: objects, autoMap: getAutoMap(headers) };
       }
 
@@ -926,8 +942,10 @@
     function getAutoMap(headers) {
       return {
         address: findHeader(headers, ['property address', 'site address', 'street address', 'full address', 'mailing address', 'address']),
-        house: findHeader(headers, ['house number', 'house no', 'house', 'situs house no']),
-        street: findHeader(headers, ['street name', 'street', 'situs street']),
+        house: findHeader(headers, ['house number', 'house no', 'situshouseno', 'house', 'situs house no']),
+        direction: findHeader(headers, ['situs direction', 'situsdir', 'direction', 'dir', 'street direction']),
+        street: findHeader(headers, ['street name', 'situsstreet', 'situs street', 'street']),
+        unit: findHeader(headers, ['situs unit', 'situsunit', 'unit number', 'unit no', 'apt', 'apartment', 'suite', 'unit']),
         city: findHeader(headers, ['city', 'situs city']),
         state: findHeader(headers, ['state']),
         zip: findHeader(headers, ['zip code', 'postal code', 'postcode', 'zip', 'situs zip'])
@@ -954,7 +972,9 @@
       const options = ['', ...state.headers];
       fillSelect(els.addressColumn, options, autoMap.address);
       fillSelect(els.houseColumn, options, autoMap.house);
+      fillSelect(els.directionColumn, options, autoMap.direction);
       fillSelect(els.streetColumn, options, autoMap.street);
+      fillSelect(els.unitColumn, options, autoMap.unit);
       fillSelect(els.cityColumn, options, autoMap.city);
       fillSelect(els.stateColumn, options, autoMap.state);
       fillSelect(els.zipColumn, options, autoMap.zip);
@@ -1156,7 +1176,9 @@
       return buildAddressFromRow(row, state.headers, {
         address: els.addressColumn.value,
         house: els.houseColumn.value,
+        direction: els.directionColumn.value,
         street: els.streetColumn.value,
+        unit: els.unitColumn.value,
         city: els.cityColumn.value,
         state: els.stateColumn.value,
         zip: els.zipColumn.value
@@ -1168,18 +1190,22 @@
       if (fullAddress) return fullAddress;
 
       const house = valueFromResult(row, map.house);
+      const direction = valueFromResult(row, map.direction);
       const street = valueFromResult(row, map.street);
+      const unit = valueFromResult(row, map.unit);
       const city = valueFromResult(row, map.city) || els.defaultCity.value.trim();
       const stateValue = valueFromResult(row, map.state) || els.defaultState.value.trim();
       const zip = valueFromResult(row, map.zip) || els.defaultZip.value.trim();
-      const streetLine = [house, street].filter(Boolean).join(' ').trim();
+
+      const streetLine = [house, direction, street].filter(Boolean).join(' ').trim();
+      const unitSuffix = unit ? ` #${unit}` : '';
 
       if (!streetLine) {
         const firstUseful = headers.map(header => valueFromResult(row, header)).find(value => /\d/.test(value) && /[a-z]/i.test(value));
         return firstUseful || '';
       }
 
-      return [streetLine, city, [stateValue, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      return [`${streetLine}${unitSuffix}`, city, [stateValue, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
     }
 
     function valueFromResult(row, key) {
