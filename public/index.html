@@ -626,46 +626,6 @@
             <p class="subtle">Paste one address per line, or paste or upload a CSV that has an address column.</p>
           </div>
 
-          <div class="field">
-            <label for="csvFile">Upload CSV file</label>
-            <input id="csvFile" type="file" accept=".csv,text/csv" />
-            <p class="help">Optional. Uploading replaces the pasted input below.</p>
-          </div>
-
-          <div class="field">
-            <label for="rawInput">Paste addresses or CSV</label>
-            <textarea id="rawInput" placeholder="123 Main St, Altadena, CA 91001&#10;456 Lake Ave&#10;789 Marengo Ave"></textarea>
-          </div>
-
-          <div class="button-row">
-            <button id="parseButton" class="button-secondary" type="button">Preview rows</button>
-            <button id="clearButton" class="button-destructive" type="button">Clear</button>
-          </div>
-        </div>
-
-        <div class="card stack">
-          <div>
-            <h2>2. Choose lookup</h2>
-            <p class="subtle">APN lookup uses LA County parcel data. Coordinate lookup uses the Mapbox-compatible geocoder endpoint.</p>
-          </div>
-
-          <div class="option-grid" aria-label="Lookup options">
-            <label class="check-card">
-              <input id="lookupApn" type="checkbox" checked />
-              <span>APN numbers<small>Find the parcel APN when one clear LA County parcel matches.</small></span>
-            </label>
-            <label class="check-card">
-              <input id="lookupCoords" type="checkbox" checked />
-              <span>Latitude and longitude<small>Fill coordinate columns from the first geocoder match.</small></span>
-            </label>
-          </div>
-
-          <div class="manual-link-card">
-            Automated APN lookup may miss some addresses. If a row needs manual review, use the
-            <a href="https://portal.assessor.lacounty.gov/" target="_blank" rel="noopener noreferrer">LA County Assessor Portal</a>
-            to search the parcel directly.
-          </div>
-
           <div class="compact-grid">
             <div class="field">
               <label for="defaultCity">Default city</label>
@@ -679,6 +639,44 @@
               <label for="defaultZip">Default ZIP</label>
               <input id="defaultZip" class="input" type="text" value="91001" inputmode="numeric" />
             </div>
+          </div>
+
+          <div class="field">
+            <label for="rawInput">Paste addresses</label>
+            <textarea id="rawInput" placeholder="123 Main St&#10;456 Lake Ave&#10;789 Marengo Ave"></textarea>
+            <p class="help">The tool works best with just house number and street — for example, <strong>3301 Thurin Ave</strong>. City, state, and ZIP come from the fields above. If your addresses already include city and state, separate them with commas: <strong>3301 Thurin Ave, Altadena, CA 91001</strong>.</p>
+          </div>
+
+          <div class="field">
+            <label for="csvFile">Or upload a CSV file</label>
+            <input id="csvFile" type="file" accept=".csv,text/csv" />
+          </div>
+
+          <div class="button-row">
+            <button id="parseButton" class="button-secondary" type="button">Preview rows</button>
+            <button id="clearButton" class="button-destructive" type="button">Clear</button>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <div>
+            <h2>2. Choose lookup</h2>
+          </div>
+
+          <div class="option-grid" aria-label="Lookup options">
+            <label class="check-card">
+              <input id="lookupApn" type="checkbox" checked />
+              <span>APN numbers<small>Looks up the parcel APN in LA County parcel data.</small></span>
+            </label>
+            <label class="check-card">
+              <input id="lookupCoords" type="checkbox" checked />
+              <span>Latitude and longitude<small>Geocodes the address to get coordinates.</small></span>
+            </label>
+          </div>
+
+          <div class="manual-link-card">
+            If APN lookup doesn't find a match, you can look it up manually at the
+            <a href="https://portal.assessor.lacounty.gov/" target="_blank" rel="noopener noreferrer">LA County Assessor Portal</a>.
           </div>
         </div>
 
@@ -829,6 +827,7 @@
       'apn',
       'latitude',
       'longitude',
+      'coordinates',
       'lookup_status',
       'apn_status',
       'geocode_status',
@@ -877,6 +876,7 @@
         apn: '',
         latitude: '',
         longitude: '',
+        coordinates: '',
         lookup_status: 'ready',
         apn_status: '',
         geocode_status: '',
@@ -1157,6 +1157,7 @@
         if (Array.isArray(center) && center.length >= 2) {
           result.longitude = center[0];
           result.latitude = center[1];
+          result.coordinates = `${center[1]}, ${center[0]}`;
           result.geocode_status = 'matched';
         } else {
           result.longitude = '';
@@ -1469,7 +1470,7 @@
         .replace(/\b(CA|CALIFORNIA)\b\s*\d{5}(?:-\d{4})?\s*$/i, '')
         .replace(/\d{5}(?:-\d{4})?\s*$/i, '')
         .replace(/\b(CA|CALIFORNIA)\b\s*$/i, '')
-        .replace(/\s+(?:#|UNIT|APT|APARTMENT|STE|SUITE)\s+[A-Z0-9-]+$/i, '')
+        .replace(/\s+(?:#\s*\S+|(?:UNIT|APT|APARTMENT|STE|SUITE)\s+\S+)$/i, '')
         .trim();
 
       return { queryAddress, zipPrefix };
@@ -1502,7 +1503,15 @@
       if (house && street) {
         const h = escapeSqlLiteral(house);
         const s = escapeSqlLiteral(street);
-        core = `SitusHouseNo = '${h}' AND UPPER(SitusStreet) LIKE UPPER('${s}%')`;
+        // When street starts with a cardinal direction (e.g. "E CALAVERAS ST"),
+        // also query without it — LA County stores some streets without the prefix
+        const dirMatch = street.match(/^(N|S|E|W)\s+(.+)$/);
+        if (dirMatch) {
+          const sNoDir = escapeSqlLiteral(dirMatch[2]);
+          core = `SitusHouseNo = '${h}' AND (UPPER(SitusStreet) LIKE UPPER('${s}%') OR UPPER(SitusStreet) LIKE UPPER('${sNoDir}%'))`;
+        } else {
+          core = `SitusHouseNo = '${h}' AND UPPER(SitusStreet) LIKE UPPER('${s}%')`;
+        }
       } else {
         const full = escapeSqlLiteral(normalizedAddress);
         core = `UPPER(SitusAddress) LIKE UPPER('%${full}%')`;
